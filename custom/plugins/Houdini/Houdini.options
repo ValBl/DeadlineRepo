@@ -113,3 +113,13 @@ Index=1
 Description=A comma separated list of the GPU devices to use specified by device Id. 'GPUs Per Task' will be ignored.
 Required=true
 Default=
+
+[MOON_PROJECT]
+Type=string
+Label=Moon Project
+Category=Pipeline
+CategoryOrder=0
+Index=0
+Description=Project Name
+Required=true
+Default=

@@ -166,7 +166,12 @@ def gather_parms_to_map():
     """
 
     # Get all non empty file references in the scene not marked as Write Only
-    input_refs = (parm for parm, _ in hou.fileReferences())
+    # Get all non empty file references in the scene not marked as Write Only
+    try:
+        input_refs = (parm for parm, _ in hou.fileReferences())
+    except:
+        print("WARNING: hou.fileReferences() failed (known issue with USD). Skipping file reference pathmapping.")
+        input_refs = ()
 
     # Get all Output only file parms from all Arnold ROPs in the scene
 
@@ -367,7 +372,7 @@ def perform_pathmapping(tempdir):
 
 try:
     print( "Detected Houdini version: " + str( hou.applicationVersion() ) )
-
+    print("License: " + str(hou.licenseCategory()))
     args = sys.argv
     print( args )
     
@@ -765,13 +770,14 @@ try:
                 "RS_MPlay_disabledNonGUI" : 0,
                 "RS_renderToMPlay" : 0
             }
-
+            #VALB edit : add default log level for redshift 
+            hou.hscript("Redshift_setLogLevel -L 5")
             if output is not None:
                 redshiftHardSettingsDict["RS_outputFileNamePrefix"] = output
 
                 # create the output directory
                 output_folder_unexpanded = os.path.dirname(output)
-                output_folder = hou.expandString(output_folder_unexpanded)
+                output_folder = hou.text.expandString(output_folder_unexpanded)
                 if not os.path.isdir(output_folder):
                     try:
                         print( 'Creating the output directory "%s"' % output_folder )
@@ -813,7 +819,12 @@ try:
                 gpus = gpus.split( "," )
                 for i in range(16):
                     hou.hscript( "Octane_setGPU -g %s -s %s"%( i, int( str( i ) in gpus) ) )
-        
+                    
+        #Valb add usdrender rop type
+        elif ropType == "usdrender_rop":
+            if rop.parm("verbose").eval() <= 4:
+                rop.parm("verbose").set(4)
+
         elif safeROPType == "Driver/vray_renderer":
             if output is not None:
                 outputFile = rop.parm( "SettingsOutput_img_file_path" )
@@ -823,6 +834,7 @@ try:
                 ifdFile = rop.parm( "render_export_filepath" )
                 if ifdFile is not None:
                     ifdFile.set( ifd )
+        
         
         if tileRender:
             camera = rop.parm( "camera" ).eval()

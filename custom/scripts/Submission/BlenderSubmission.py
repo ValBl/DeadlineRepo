@@ -47,17 +47,21 @@ def __main__( *args ):
     scriptDialog.AddTabControl("Tabs", 0, 0)
     
     scriptDialog.AddTabPage("Job Options")
+
     scriptDialog.AddGrid()
     scriptDialog.AddControlToGrid( "Separator1", "SeparatorControl", "Job Description", 0, 0, colSpan=2 )
 
-    scriptDialog.AddControlToGrid( "NameLabel", "LabelControl", "Job Name", 1, 0, "The name of your job. This is optional, and if left blank, it will default to 'Untitled'.", False )
-    scriptDialog.AddControlToGrid( "NameBox", "TextControl", "Untitled", 1, 1 )
+    scriptDialog.AddControlToGrid( "BatchLabel", "LabelControl", "Batch Name", 1, 0, "The name of your Batch. This is optional, and if left blank, it will default to 'Untitled'.", False )
+    scriptDialog.AddControlToGrid( "BatchBox", "TextControl", "Untitled", 1, 1 )
 
-    scriptDialog.AddControlToGrid( "CommentLabel", "LabelControl", "Comment", 2, 0, "A simple description of your job. This is optional and can be left blank.", False )
-    scriptDialog.AddControlToGrid( "CommentBox", "TextControl", "", 2, 1 )
+    scriptDialog.AddControlToGrid( "NameLabel", "LabelControl", "Job Name", 2, 0, "The name of your job. This is optional, and if left blank, it will default to 'Untitled'.", False )
+    scriptDialog.AddControlToGrid( "NameBox", "TextControl", "Untitled", 2, 1 )
 
-    scriptDialog.AddControlToGrid( "DepartmentLabel", "LabelControl", "Department", 3, 0, "The department you belong to. This is optional and can be left blank.", False )
-    scriptDialog.AddControlToGrid( "DepartmentBox", "TextControl", "", 3, 1 )
+    scriptDialog.AddControlToGrid( "CommentLabel", "LabelControl", "Comment", 3, 0, "A simple description of your job. This is optional and can be left blank.", False )
+    scriptDialog.AddControlToGrid( "CommentBox", "TextControl", "", 3, 1 )
+
+    scriptDialog.AddControlToGrid( "DepartmentLabel", "LabelControl", "Department", 4, 0, "The department you belong to. This is optional and can be left blank.", False )
+    scriptDialog.AddControlToGrid( "DepartmentBox", "TextControl", "", 4, 1 )
     scriptDialog.EndGrid()
 
     scriptDialog.AddGrid()
@@ -110,18 +114,31 @@ def __main__( *args ):
     scriptDialog.AddControlToGrid( "OutputLabel", "LabelControl", "Output File (Optional)", 2, 0, "Override the output path in the scene. This is optional, and can be left blank.", False )
     scriptDialog.AddSelectionControlToGrid( "OutputBox", "FileSaverControl", "", "All Files (*)", 2, 1, colSpan=2 )
 
-    scriptDialog.AddControlToGrid( "FramesLabel", "LabelControl", "Frame List", 3, 0, "The list of frames to render.", False )
-    scriptDialog.AddControlToGrid( "FramesBox", "TextControl", "", 3, 1, colSpan=2 )
+    scriptDialog.AddControlToGrid( "ColorLabel", "LabelControl", "OCIO", 3, 0, "Choose your OCIO", False )
+    scriptDialog.AddComboControlToGrid( "OcioBox", "ComboControl", "Default", ("Default","ACES"), 3, 1, expand=False )
 
-    scriptDialog.AddControlToGrid( "ChunkSizeLabel", "LabelControl", "Frames Per Task", 4, 0, "This is the number of frames that will be rendered at a time for each job task. ", False )
-    scriptDialog.AddRangeControlToGrid( "ChunkSizeBox", "RangeControl", 1, 1, 1000000, 0, 1, 4, 1 , expand=False)
-    scriptDialog.AddSelectionControlToGrid("SubmitSceneBox","CheckBoxControl",False,"Submit Blender Scene File With The Job", 4, 2, "If this option is enabled, the scene file will be submitted with the job, and then copied locally to the Worker machine during rendering.")
+    scriptDialog.AddControlToGrid( "FramesLabel", "LabelControl", "Frame List", 4, 0, "The list of frames to render.", False )
+    scriptDialog.AddControlToGrid( "FramesBox", "TextControl", "", 4, 1, colSpan=2 )
 
-    scriptDialog.AddControlToGrid( "ThreadsLabel", "LabelControl", "Threads", 5, 0, "The number of threads to use for rendering.", False )
-    scriptDialog.AddRangeControlToGrid( "ThreadsBox", "RangeControl", 0, 0, 256, 0, 1, 5, 1, expand=False )
+    scriptDialog.AddControlToGrid( "ChunkSizeLabel", "LabelControl", "Frames Per Task", 5, 0, "This is the number of frames that will be rendered at a time for each job task. ", False )
+    scriptDialog.AddRangeControlToGrid( "ChunkSizeBox", "RangeControl", 1, 1, 1000000, 0, 1, 5, 1 , expand=False)
+    scriptDialog.AddSelectionControlToGrid("SubmitSceneBox","CheckBoxControl",False,"Submit Blender Scene File With The Job", 5, 2, "If this option is enabled, the scene file will be submitted with the job, and then copied locally to the Worker machine during rendering.")
 
-    scriptDialog.AddControlToGrid( "BuildLabel", "LabelControl", "Build To Force", 6, 0, "You can force 32 or 64 bit rendering with this option.", False )
-    scriptDialog.AddComboControlToGrid( "BuildBox", "ComboControl", "None", ("None","32bit","64bit"), 6, 1, expand=False )
+    scriptDialog.AddControlToGrid( "ThreadsLabel", "LabelControl", "Threads", 6, 0, "The number of threads to use for rendering.", False )
+    scriptDialog.AddRangeControlToGrid( "ThreadsBox", "RangeControl", 0, 0, 256, 0, 1, 6, 1, expand=False )
+
+    scriptDialog.AddControlToGrid( "BuildLabel", "LabelControl", "Build To Force", 7, 0, "You can force 32 or 64 bit rendering with this option.", False )
+    scriptDialog.AddComboControlToGrid( "BuildBox", "ComboControl", "None", ("None","32bit","64bit"), 7, 1, expand=False )
+    
+    scriptDialog.AddControlToGrid( "forceGpuArgumentsLabel", "LabelControl", "Force Gpu", 8, 0, "Force Gpu with script", False )
+    scriptDialog.AddSelectionControlToGrid( "gpucheckBox", "CheckBoxControl", True, "", 8, 1, "" )
+
+    scriptDialog.AddControlToGrid( "forceCheckFileArgumentsLabel", "LabelControl", "Check missing Files", 9, 0, "Check missing Files with script", False )
+    scriptDialog.AddSelectionControlToGrid( "forceCheckFilecheckBox", "CheckBoxControl", True, "", 9, 1, "" )
+
+    scriptDialog.AddControlToGrid( "VersionLabel", "LabelControl", "Version:", 10, 0, "vversion", False )
+    scriptDialog.AddControlToGrid( "VersionBox", "TextControl", "4.4", 10, 1, colSpan=2 )
+
     scriptDialog.EndGrid()
     scriptDialog.EndTabPage()
     
@@ -147,8 +164,10 @@ def __main__( *args ):
     settings = ("DepartmentBox","CategoryBox","PoolBox","SecondaryPoolBox","GroupBox","PriorityBox","MachineLimitBox","IsBlacklistBox","MachineListBox","LimitGroupBox","SceneBox","FramesBox","ChunkSizeBox","OutputBox","ThreadsBox","BuildBox", "SubmitSceneBox")
     scriptDialog.LoadSettings( GetSettingsFilename(), settings )
     scriptDialog.EnabledStickySaving( settings, GetSettingsFilename() )
-    
+
+
     appSubmission = False
+    
     if len( args ) > 0:
         appSubmission = True
         
@@ -157,6 +176,7 @@ def __main__( *args ):
             return
         
         scriptDialog.SetValue( "SceneBox", args[0] )
+        scriptDialog.SetValue( "BatchBox", Path.GetFileNameWithoutExtension( args[0] ) )
         scriptDialog.SetValue( "NameBox", Path.GetFileNameWithoutExtension( args[0] ) )
         
         scriptDialog.SetValue( "FramesBox", args[1] )
@@ -173,9 +193,11 @@ def __main__( *args ):
         extension = Path.GetExtension( outputFile )
         outputFile = Path.Combine( directory, prefix + padding + extension )
         scriptDialog.SetValue( "OutputBox", outputFile  )
-        
         scriptDialog.SetValue( "ThreadsBox", int(args[3]) )
         
+        scriptDialog.SetValue("OcioBox", args[5] )
+        scriptDialog.SetValue("VersionBox", args[6] )
+
         platform = args[4]
         if platform.find( "64" ) >= 0:
             scriptDialog.SetValue( "BuildBox", "64bit" )
@@ -206,6 +228,7 @@ def SubmitButtonPressed(*args):
         
     # Check if blender files exist.
     sceneFile = scriptDialog.GetValue( "SceneBox" )
+    
     if( not File.Exists( sceneFile ) ):
         scriptDialog.ShowMessageBox( "The Blender file %s does not exist" % sceneFile, "Error" )
         return
@@ -216,6 +239,10 @@ def SubmitButtonPressed(*args):
     
     # Check output file
     if outputFile != "":
+        dirname = os.path.dirname(outputFile)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname, exist_ok=True)
+            
         if(not Directory.Exists(Path.GetDirectoryName(outputFile))):
             scriptDialog.ShowMessageBox( "The directory of the output file %s does not exist." % Path.GetDirectoryName(outputFile), "Error" )
             return
@@ -231,10 +258,11 @@ def SubmitButtonPressed(*args):
         return
         
     jobName = scriptDialog.GetValue( "NameBox" )
-    
+    batchName = scriptDialog.GetValue( "BatchBox")
     # Create job info file.
     jobInfoFilename = Path.Combine( ClientUtils.GetDeadlineTempPath(), "blender_job_info.job" )
     writer = StreamWriter( jobInfoFilename, False, Encoding.Unicode )
+    writer.WriteLine( "BatchName=%s" % batchName)
     writer.WriteLine( "Plugin=Blender" )
     writer.WriteLine( "Name=%s" % jobName )
     writer.WriteLine( "Comment=%s" % scriptDialog.GetValue( "CommentBox" ) )
@@ -297,6 +325,10 @@ def SubmitButtonPressed(*args):
     writer.WriteLine( "Threads=%s" % scriptDialog.GetValue( "ThreadsBox" ) )
     writer.WriteLine( "Build=%s" % scriptDialog.GetValue( "BuildBox" ) )
     
+    writer.WriteLine( "Ocio=%s" % scriptDialog.GetValue( "OcioBox" ) )
+    writer.WriteLine( "Version=%s" %  scriptDialog.GetValue( "VersionBox" ))
+    writer.WriteLine( "GpuForce=%s" % scriptDialog.GetValue( "gpucheckBox" ) )
+    writer.WriteLine( "CheckFileMissing=%s" % scriptDialog.GetValue( "forceCheckFilecheckBox" ) )
     writer.Close()
     
     # Setup the command line arguments.

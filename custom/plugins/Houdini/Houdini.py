@@ -14,6 +14,7 @@ import socket
 import traceback
 import six
 from six.moves import range
+import pathlib
 
 def GetDeadlinePlugin():
     return HoudiniPlugin()
@@ -61,8 +62,9 @@ class HoudiniPlugin (DeadlinePlugin):
         self.AddStdoutHandlerCallback( "(Couldn't find renderer.*)" ).HandleCallback += self.HandleStdoutRenderer
         self.AddStdoutHandlerCallback( "(Error: Unknown option:.*)" ).HandleCallback += self.HandleStdoutUnknown
         self.AddStdoutHandlerCallback( "(Error: .*)" ).HandleCallback += self.HandleStdoutError
+        
         self.AddStdoutHandlerCallback(r"(ERROR\s*\|.*)").HandleCallback += self.HandleStdoutError #Arnold errors
-        self.AddStdoutHandlerCallback(r"\[Error\].*").HandleCallback += self.HandleStdoutError
+        self.AddStdoutHandlerCallback(r"(\[Error\].*)").HandleCallback += self.HandleStdoutError
         self.AddStdoutHandlerCallback( ".*(Redshift cannot operate with less than 128MB of free VRAM).*" ).HandleCallback += self.HandleStdoutError
         self.AddStdoutHandlerCallback( ".*(No licenses could be found to run this application).*" ).HandleCallback += self.HandleStdoutLicense
         self.AddStdoutHandlerCallback( ".*ALF_PROGRESS ([0-9]+)%.*" ).HandleCallback += self.HandleStdoutFrameProgress
@@ -73,16 +75,120 @@ class HoudiniPlugin (DeadlinePlugin):
         self.AddStdoutHandlerCallback( "\[render progress\] ---[ ]+(\d+) percent" ).HandleCallback += self.HandleStdoutFrameProgress
         self.AddStdoutHandlerCallback( "(License error: No license found)").HandleCallback += self.HandleStdoutLicense
         self.AddStdoutHandlerCallback( "RMAN_PROGRESS *([0-9]+)%" ).HandleCallback += self.HandleStdoutFrameProgress
+        
+        #VALB edit: Add block detection for progress with redshift
+        self.AddStdoutHandlerCallback(".*Block\\s+(\\d+)/(\\d+).*").HandleCallback += self.HandleStdoutFrameProgress
+        self.AddStdoutHandlerCallback(".*\[Redshift\] Rendering frame ([0-9]+)...\.*").HandleCallback +=  self.HandleStdoutFrameProgress
+        #Error if use cpu
+        self.AddStdoutHandlerCallback( r"(\[Redshift\] OIDN: Using CPU Device)" ).HandleCallback += self.HandleStdoutError
 
         # redshift errors if output path does not exist
         self.AddStdoutHandlerCallback( "Output file locked or path not available for writing. Skipping frame." ).HandleCallback += self.HandleStdoutOutputPathUnavailable
+
+        #Valb add Karma error cuda
+        self.AddStdoutHandlerCallback(r'(.*has registered a critical error "CUDA_ERROR_OUT_OF_MEMORY".*)').HandleCallback += self.HandleStdoutError
         
         self.AddPopupHandler( ".*Streaming SIMD Extensions Not Enabled.*", "OK" )
+    
+    #ValB edit: Connect to the moon pipeline
+    def SetupMoon(self, project):
         
+        self.LogInfo("Get MoonPipe")
+        import sys
+        print(sys.path)
+        #Import from deadline repository option : Python Settings
+        from tothemoon.core import moon_core
+        from tothemoon.dcc.houdini import moon_houdini
+        
+        mc = moon_core.MoonCore()
+        soft = moon_houdini.Software()
+
+
+        path = pathlib.Path(self.GetPluginInfoEntryWithDefault( "SceneFile", self.GetDataFilename()))
+        root_project = path.anchor + path.parts[1]
+        options = mc.get_project_config(project_path=root_project)
+        #executable = soft.get_executable(options)
+        versionmoon = soft.get_version(options)
+        packages = soft.get_plugin(options)
+
+        if packages:
+            self.SetEnvironmentVariable( "HOUDINI_PACKAGE_DIR", packages)
+            self.LogInfo(f"Add packages: {packages}")
+        else:
+            self.LogInfo("The project didn't have specific packages")
+
+        return versionmoon
+
+
+    #CUSTOM 
     def RenderExecutable( self ):
+        #skip double loading packages with subprocess
+        #self.SetEnvironmentVariable( "HOUDINI_PACKAGE_SKIP", "1" )
+            
         version = self.GetPluginInfoEntryWithDefault( "Version", "16.0" ).replace( ".", "_" )
-        return self.GetRenderExecutable( "Houdini" + version + "_Hython_Executable", "Houdini " + version)
+        sub_version = self.GetPluginInfoEntryWithDefault( "FullVersion", "20.5.445" )
+        splitted_version = sub_version.split(".")
         
+        #exe = self.GetRenderExecutable( "Houdini" + version + "_Hython_Executable", "Houdini " + version)
+        exe = r"C:\Program Files\Side Effects Software\Houdini 20.5.445\bin\hython.exe"
+        
+        submitted_exe = self.switch_exe(sub_version, exe)
+        self.LogInfo("_________")
+        self.LogInfo("MOON PIPE")
+        self.LogInfo("_________")
+        
+        try : 
+            project = self.GetPluginInfoEntryWithDefault( "MOON_PROJECT", "") 
+            if not project:
+                path = pathlib.Path(self.GetPluginInfoEntryWithDefault( "SceneFile", self.GetDataFilename()))
+                project = str(path.parts[1])
+                self.LogWarning("MOON_PROJECT didn't exist, We created with the scenefile")
+
+            if project:
+                self.LogInfo(f"Current Project: {project}")
+                version_prj = self.SetupMoon(project)
+                      
+                if version_prj == sub_version:
+                    self.LogInfo(f"The version of the submitted file {version_prj} is identical to the project version {sub_version}.")
+                else:
+                    self.LogWarning(f"The version of the submitted file {version_prj}  is not identical to the project version {sub_version}.")
+            else: 
+                raise Exception("MOON_PROJECT didn't exist")
+        except Exception as error:
+            self.LogWarning(
+                f"('_') This render isn't launched with MoonPipeline : {error}\n"
+                f"{traceback.format_exc()}"
+            )
+        self.SetEnvironmentVariable( "PYTHONPATH", "//PIPELINEPATH/src" + ";" + "//uncpath/Deadline/python_libs")
+        self.LogInfo( "Houdini version during submission: " + sub_version )
+        
+        try:
+            if os.path.exists(submitted_exe):
+                exe = submitted_exe
+                self.LogInfo( "This worker has the same version: " + exe )
+
+            else:
+                self.LogWarning(f"This version is not installed on this worker. {sub_version}")
+                path_houdini = os.path.dirname(os.path.dirname(os.path.dirname(submitted_exe)))
+
+                list_dir = os.listdir(path_houdini)
+                
+                regex_string = r'^Houdini {0}\.{1}\.\d+$'.format(splitted_version[0], splitted_version[1])
+                pattern = re.compile(regex_string)
+                filtered = [item.replace("Houdini ", "") for item in list_dir if pattern.match(item)]
+                latest_version = max(filtered, key=lambda v: tuple(map(int, v.split('.'))))
+                exe = self.switch_exe(latest_version, exe)
+                self.LogInfo(f"Find latest houdini version matching with submitting version: {latest_version} sub_version: {sub_version}")
+        
+        except:
+            self.FailRender( "Where is Houdini on this Worker ? - Houdini is not installed on this machine" )
+
+        return exe
+    
+    def switch_exe(self, version, exe):
+        return re.sub(r"(Houdini )\d+\.\d+\.\d+", lambda m: m.group(1) + version, exe)
+    #CUSTOM
+
     def RenderArgument(self):
         ifdFilename = self.GetPluginInfoEntryWithDefault( "IFD", "" ) 
         ifdFilename = RepositoryUtils.CheckPathMapping( ifdFilename )
@@ -439,6 +545,26 @@ class HoudiniPlugin (DeadlinePlugin):
             overallProgress = float(self.GetRegexMatch(1))
             self.SetProgress(overallProgress)
             self.SetStatusMessage( "Progress: " + str(overallProgress) + " %" )
+        
+        #Code form https://www.patreon.com/posts/deadline-houdini-30690855?l=fr
+        elif self.ropType in ("Redshift_ROP","Redshift_Proxy_Output"):
+            frameCount = self.GetEndFrame() - self.GetStartFrame() + 1
+            if frameCount != 0:
+                completedFrameProgress = float(self.completedFrames) * 100.0
+                currentFrameProgress = float(self.GetRegexMatch(1))
+                overallProgress = (completedFrameProgress + currentFrameProgress) / float(frameCount)
+                self.SetProgress(overallProgress)
+                self.SetStatusMessage( "Progress: " + str(overallProgress) + " %" )
+            else:
+                self.LogInfo("status start")
+                self.LogInfo(f"{self.GetEndFrame()} - {self.GetStartFrame()}")
+                current_status = float(self.GetRegexMatch(1))
+                max_status = float(self.GetRegexMatch(2))
+                overallProgress = (current_status * 100) / max_status
+                self.LogInfo(str(overallProgress))
+                self.SetProgress(overallProgress)
+                self.SetStatusMessage( "Progress: " + str(overallProgress) + " %" )
+                self.LogInfo("status end")
         
     def HandleStdoutFrameComplete(self):
         if self.ropType in ("ifd", "rop_ifd"):

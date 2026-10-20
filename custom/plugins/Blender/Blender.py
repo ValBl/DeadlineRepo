@@ -10,6 +10,9 @@ from Deadline.Scripting import RepositoryUtils, SystemUtils, FileUtils, StringUt
 
 import sys
 
+import os
+
+
 def GetDeadlinePlugin():
     return BlenderPlugin()
     
@@ -54,29 +57,86 @@ class BlenderPlugin(DeadlinePlugin):
         self.AddStdoutHandlerCallback(".*Unable to create directory.*").HandleCallback += self.HandleStdoutFailed
     
     def RenderExecutable(self):
-        return self.GetRenderExecutable( "Blender_RenderExecutable", "Blender")
+        self.version = self.GetPluginInfoEntryWithDefault( "Version", "" )
+        self.LogInfo("Selecting the correct version of blender.exe")
         
+        if not self.version:
+            self.version = "4.4"
+        self.LogInfo(f"Version :{self.version}")
+
+        path_blender = fr"C:\Program Files\Blender Foundation\Blender {self.version}\blender.exe"
+        self.LogInfo(f"blender.exe path: {path_blender}")
+        if not os.path.exists(path_blender):
+            self.FailRender("This version of Blender is not installed on this render machine")
+        
+        
+        #return self.GetRenderExecutable( "Blender_RenderExecutable", "Blender")
+        return path_blender
+    
     def RenderArgument(self):
+        
+        
+        
         sceneFile = self.GetPluginInfoEntryWithDefault( "SceneFile", self.GetDataFilename() )
         sceneFile = RepositoryUtils.CheckPathMapping( sceneFile )
+        
         if SystemUtils.IsRunningOnWindows():
+
             sceneFile = sceneFile.replace( "/", "\\" )
             if sceneFile.startswith( "\\" ) and not sceneFile.startswith( "\\\\" ):
                 sceneFile = "\\" + sceneFile
         else:
+            self.Log(f"Worker not on Windows, Not created folder : {dirname}")
             sceneFile = sceneFile.replace( "\\", "/" )
         
         renderArgument = " -b \"" + sceneFile + "\""
+        
+        #CUSTOM
+        #Force GPU
+        gpuforce = self.GetPluginInfoEntryWithDefault("GpuForce", "")
+        if gpuforce:
+            gpuscriptpath = r"PYTHON\script\BlenderForceGPUScript.py"
+            #gpuscriptpath = RepositoryUtils.CheckPathMapping( gpuscriptpath )
+            renderArgument += " -P \"" + gpuscriptpath + "\""
+            
+        checkMissingFile = self.GetPluginInfoEntryWithDefault("CheckFileMissing", "")
+        if checkMissingFile:
+            checkfilepath = r"PYTHON\\script\missingfile.py"
+            renderArgument += " -P \"" + checkfilepath + "\""
+        #END Force GPU
+
         renderArgument += " -t " + self.GetPluginInfoEntryWithDefault( "Threads", "0" )
         
         outputFile = self.GetPluginInfoEntryWithDefault( "OutputFile", "" )
         outputFile = RepositoryUtils.CheckPathMapping( outputFile )
+        dirname = os.path.dirname(outputFile)
         if SystemUtils.IsRunningOnWindows():
+            if not os.path.exists(dirname):
+                os.makedirs(dirname, exist_ok=True)
+                self.LogInfo(f"Folder created : {dirname}")
             outputFile = outputFile.replace( "/", "\\" )
             if outputFile.startswith( "\\" ) and not outputFile.startswith( "\\\\" ):
                 outputFile = "\\" + outputFile
         else:
             outputFile = outputFile.replace( "\\", "/" )
+
+
+        #SETUP OCIO
+        if str(self.version) < "5.0":
+            self.LogInfo("OCIO SETUP")
+            ocio_type = self.GetPluginInfoEntryWithDefault( "Ocio", "" )
+            self.LogInfo(str(ocio_type))
+
+            if ocio_type == "ACES":
+                ocio_path = r'PIPELINEPATH/ocio/Data/colormanagement_aces/config.ocio'
+                
+            else:
+                ocio_path = r'PIPELINEPATH/ocio/Data/colormanagement/config.ocio'
+            if os.path.exists(ocio_path):
+                os.environ['OCIO'] = ocio_path
+            else: 
+                self.FailRender(f"The config.ocio didn't exist, Contact a supervisor or TD pipeline: path: {ocio_path}")
+            #end SETUP OCIO
         
         renderArgument += StringUtils.BlankIfEitherIsBlank( " -x 1 -o \"", StringUtils.BlankIfEitherIsBlank( outputFile, "\"" ) )
         renderArgument += " -s " + str(self.GetStartFrame()) + " -e " + str(self.GetEndFrame()) + " -a "

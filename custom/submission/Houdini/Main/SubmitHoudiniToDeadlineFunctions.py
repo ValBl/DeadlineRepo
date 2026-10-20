@@ -515,6 +515,7 @@ def get_render_output_filepath(node):
     elif output is None and node.type().description() == "RenderMan":
         print( 'Warning: RenderMan 21 has deprecated the "RenderMan" node, please use the newer "RenderMan RIS" node.' )
     elif output != "COMMAND":
+        print("Pipeline")
         print("Output path for ROP: \"%s\" is not specified" % node.path())
     else:
         print("Unable to resolve output path for ROP: \"%s\"" % node.path())
@@ -884,6 +885,17 @@ def SubmitRenderJob( node, jobProperties, dependencies ):
                     ver = hou.applicationVersion()
                     fileHandle.write( "Version=%s.%s\n" % ( ver[0], ver[1] ) )
                     fileHandle.write( "Build=%s\n" % jobProperties.get( "bits", "None" ) )
+
+                    #CUSTOM
+                    sub_version = "FullVersion=%s.%s.%s\n" % ( ver[0], ver[1],ver[2] )
+                    print("Send the submitter version: "+ sub_version )
+                    fileHandle.write( sub_version )
+                    project_var = hou.getenv("MOON_PROJECT")
+                    if project_var:
+                        project = f"MOON_PROJECT={project_var}\n"
+                        print("Send the project name: " + str(project_var) )
+                        fileHandle.write(project)
+                    #end_CUSTOM
 
                     if isHQueueSim:
                         fileHandle.write( "SimJob=True\n" )

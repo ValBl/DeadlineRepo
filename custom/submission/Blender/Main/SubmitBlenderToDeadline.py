@@ -83,6 +83,18 @@ def main( ):
     
     platform = str(bpy.app.build_platform)
     
+    #add ocio setting blender 4:
+    ocio_type = bpy.context.scene.display_settings.display_device
+    ocio_var = os.getenv("OCIO")
+
+    if ocio_var:
+        if "aces" in ocio_var:
+            ocio_type = "ACES"
+        else: 
+            ocio_type = "Default"
+
+    #add version 
+    version = bpy.app.version_string[:3]
     deadlineCommand = GetDeadlineCommand()
     
     args = []
@@ -94,7 +106,8 @@ def main( ):
     args.append(output_path)
     args.append(str(threads))
     args.append(platform)
-    
+    args.append(ocio_type)
+    args.append(version) 
     startupinfo = None
     #~ if os.name == 'nt':
         #~ startupinfo = subprocess.STARTUPINFO()
