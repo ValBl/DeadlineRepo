@@ -1,0 +1,26 @@
+[About]
+Type=label
+Label=About
+Category=About Plugin
+CategoryOrder=-1
+Index=0
+Default=RedshiftUSD Plugin for Deadline
+Description=Not configurable
+
+[ConcurrentTasks]
+Type=label
+Label=ConcurrentTasks
+Category=About Plugin
+CategoryOrder=-1
+Index=0
+Default=True
+Description=Not configurable
+
+[Redshift_Executable_1]
+Type=multilinemultifilename
+Label=RedshiftUSD 1 Executable
+Category=Render Executables
+CategoryOrder=0
+CategoryIndex=0
+Default=C:/ProgramData/Redshift/bin/redshiftUsdCmdLine.exe;/usr/redshift/bin/redshiftUsdCmdLine
+Description=The path to the Redshift executable file used for rendering. Enter alternative paths on separate lines.

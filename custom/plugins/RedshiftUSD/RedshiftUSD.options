@@ -1,0 +1,138 @@
+[Version]
+Type=label
+Label=Version
+Category=Redshift Info
+CategoryOrder=0
+Index=0
+Description=The Redshift application version to render with.
+Required=false
+DisableIfBlank=true
+
+[SceneFile]
+Type=filename
+Label=Scene Filename
+Category=Render Options
+CategoryOrder=1
+Index=0
+Description=The scene filename as it exists on the network.
+Required=false
+DisableIfBlank=true
+
+[ReplaceFrameNumber]
+Type=boolean
+Label=Replace Frame Number
+Category=Render Options
+CategoryOrder=1
+Index=1
+Description=If enabled, the frame number in the scene file will be replaced with the appropriate frame.
+Required=false
+DisableIfBlank=true
+
+[RenderOptionsFile]
+Type=filename
+Label=Render Options File
+Category=Render Options
+CategoryOrder=1
+Index=2
+Description=Overrides render options using a text file. The text file should contain pairs of options on each line.
+Required=false
+DisableIfBlank=false
+
+[GPUsPerTask]
+Type=integer
+Minimum=0
+Maximum=16
+Label=GPUs Per Task
+Category=Render Options
+CategoryOrder=1
+Index=3
+Description=The number of GPUs to use per task. If set to 0, the default number of GPUs will be used.
+Required=false
+DisableIfBlank=true
+
+[SelectGPUDevices]
+Type=string
+Label=Select GPU Devices
+Category=Render Options
+CategoryOrder=1
+Index=4
+Description=A comma separated list of the GPU devices to use specified by device id. 'GPUs Per Task' will be ignored.
+Required=false
+DisableIfBlank=true
+
+[TextureCacheBudget]
+Type=integer
+Minimum=0
+Maximum=50000
+Label=Texture Cache Budget
+Category=Render Options
+CategoryOrder=1
+Index=5
+Description=Sets the texture cache size (in megabytes). If set to 0, will use the default texture cache budget.
+Required=false
+DisableIfBlank=false
+
+[OverrideResolution]
+Type=boolean
+Label=Override Resolution
+Category=Render Options
+CategoryOrder=1
+Index=6
+Description=If enabled, override resolution with the specified width and height.
+Required=true
+DisableIfBlank=false
+Default=false
+
+[Width]
+Type=integer
+Minimum=1
+Label=Image Width
+Category=Render Options
+CategoryOrder=1
+Index=7
+Description=The output image width in pixels.
+Required=true
+DisableIfBlank=false
+Default=800
+
+[Height]
+Type=integer
+Minimum=1
+Label=Image Height
+Category=Render Options
+CategoryOrder=1
+Index=8
+Description=The output image height in pixels.
+Required=true
+DisableIfBlank=false
+Default=600
+
+[ImageOutputDirectory]
+Type=folder
+Label=Image Output Directory
+Category=Output
+CategoryOrder=2
+Index=0
+Description=Overrides the image output directory. If left blank, Redshift will save the image output to the folder defined in the .rs file.
+Required=false
+DisableIfBlank=false
+
+[PBTOutputDirectory]
+Type=folder
+Label=PBT Output Directory
+Category=Output
+CategoryOrder=2
+Index=1
+Description=Overrides the point-based technique output directory. If left blank, Redshift will save the point-based technique output to the folder defined in the .rs file.
+Required=false
+DisableIfBlank=false
+
+[CacheDirectory]
+Type=folder
+Label=Cache Directory
+Category=Output
+CategoryOrder=2
+Index=2
+Description=Overrides the cache path folder. If left blank, Redshift will output to the default cache path folder.
+Required=false
+DisableIfBlank=false
